@@ -1,0 +1,32 @@
+FROM centos:latest
+
+# minify this by running everything under one RUN command with line breaks
+
+# install apache web server
+RUN yum -y install httpd && yum -y update; yum clean all
+
+# populate a test file
+RUN echo "SB Test Apache Cont userland.." > /var/www/html/index.html
+
+# change ownership and perms to web content (user99)
+RUN chmod 0444 /var/www/html/* && chown -R 99 /var/www/html/
+
+# change ownership and perms to apache daemon folder & files (user99)
+RUN chown -R 99 /run/httpd/ && chmod 0755 /run/httpd/*
+
+# change ownership and perms to apache logs folder (user99)
+RUN chown -R 99 /etc/httpd/logs/ && chmod 0755 /etc/httpd/logs/
+
+# change port to be 8080 as we will not be running as root
+RUN sed -i 's/Listen 80/Listen 8080/g' /etc/httpd/conf/httpd.conf
+
+# set hostname to get rid of error - todo best practice ?
+RUN sed -i 's/#ServerName www.example.com:80/ServerName localhost:8080/g' /etc/httpd/conf/httpd.conf
+
+USER 99
+
+EXPOSE 8080
+
+ENTRYPOINT [ "/usr/sbin/httpd" ]
+
+CMD [ "-D", "FOREGROUND" ]
